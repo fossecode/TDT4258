@@ -1,0 +1,24 @@
+.thumb
+.syntax unified
+.include "efm32gg.s"
+
+LDR R0, =CMU_BASE
+LDR R1, [R0, #CMU_HFPERCLKEN0]
+MOV R2, #1
+LSL R2, R2, #CMU_HFPERCLKEN0_GPIO
+ORR R1, R1, R2
+STR R1, [R0, #CMU_HFPERCLKEN0]
+
+LDR R0, =GPIO_PA_BASE
+MOV R2, #0x2
+STR R2, [R0, #GPIO_CTRL]
+
+MOV R2, #0x55555555
+STR R2, [R0, #GPIO_MODEH]
+
+MOV R2, #0x0f
+LSL R2, R2, #8
+STR R2, [R0, #GPIO_DOUT]
+
+NOP // Behold denne pÃ¥ bunnen av fila
+
