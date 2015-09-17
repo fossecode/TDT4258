@@ -77,7 +77,7 @@
 
 
 _reset: 
-	//Branch to different setups, then 
+	//Branch to different setups (to make program more readable)
 	BL register_clock
 	BL register_led_lights
 	BL register_buttons
@@ -86,35 +86,29 @@ _reset:
 	WFI
 
 register_clock:
-	LDR R0, =CMU_BASE
-	LDR R1, [R0, #CMU_HFPERCLKEN0]
-	MOV R2, #1
-	LSL R2, R2, #CMU_HFPERCLKEN0_GPIO
-	ORR R1, R1, R2
-	STR R1, [R0, #CMU_HFPERCLKEN0]
-
-	BX LR
+	LDR R0, =CMU_BASE			//Load CMU_BASE address into register R0
+	LDR R1, [R0, #CMU_HFPERCLKEN0]		//Load CMU_BASE with offset to CMU_HFPERCLKEN0 into register R1
+	MOV R2, #1				//Store value 1 directly in register R2
+	LSL R2, R2, #CMU_HFPERCLKEN0_GPIO	//Left shift 1 to the bit enabling CMU_HFPERCLKEN0_GPIO
+	ORR R1, R1, R2				//Use OR to edit the values in CMU_HFPERCLKEN0 so that we dont tamper with other values than the one we want to change.
+	STR R1, [R0, #CMU_HFPERCLKEN0]		//Store result in memory
+	BX LR					//Return to *** (her kan vi kanskje si noe om PC og noe på I han snakket om i forelesning, sjekk foil)
 
 register_led_lights:
 
-	LDR R0, =GPIO_PA_BASE
-	MOV R2, #0x2
-	STR R2, [R0, #GPIO_CTRL]
-
-	MOV R2, #0x55555555
-	STR R2, [R0, #GPIO_MODEH]
-
-	BX LR
+	LDR R0, =GPIO_PA_BASE			//Load GPIO port A base into register R0
+	MOV R2, #0x2				//Store 2 directly in register R2
+	STR R2, [R0, #GPIO_CTRL]		//Store 2 in memory at the address of GPIO CTRL (to enable something?)
+	MOV R2, #0x55555555			//Store hex value 55555555 directly in register R2
+	STR R2, [R0, #GPIO_MODEH]		//Store R2 in memory at the address of GPIO MODE HIGH.
+	BX LR					//Return to ***					
 
 register_buttons:
-	LDR R0, =GPIO_PC_BASE
-
+	LDR R0, =GPIO_PC_BASE			//Load GPIO port C base into Rregister R0
 	MOV R2, #0x33333333
 	STR R2, [R0, #GPIO_MODEL]
-
 	MOV R2, #0xff
 	STR R2, [R0, #GPIO_DOUT]
-
 	BX LR
 
 register_interrupts:
