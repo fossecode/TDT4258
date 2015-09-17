@@ -104,34 +104,33 @@ register_led_lights:
 	BX LR					//Return to ***					
 
 register_buttons:
-	LDR R0, =GPIO_PC_BASE			//Load GPIO port C base into Rregister R0
-	MOV R2, #0x33333333
-	STR R2, [R0, #GPIO_MODEL]
-	MOV R2, #0xff
-	STR R2, [R0, #GPIO_DOUT]
-	BX LR
+	LDR R0, =GPIO_PC_BASE			//Load GPIO port C base into register R0
+	MOV R2, #0x33333333			//Store hex value 55555555 directly in register R2
+	STR R2, [R0, #GPIO_MODEL]		//Store R2 in memory at the address of GPIO MODE LOW.
+	MOV R2, #0xff				//Store hex value FF directly in register R2
+	STR R2, [R0, #GPIO_DOUT]		//Store R2 in memory at the address of GPIO DOUT
+	BX LR					//Return to ***
 
 register_interrupts:
-	LDR R0, =GPIO_BASE
-	MOV R1, #0x22222222
-	STR R1, [R0, #GPIO_EXTIPSELL]
-
-	MOV R1, #0xff
-	STR R1, [R0, #GPIO_EXTIFALL]
-	STR R1, [R0, #GPIO_EXTIRISE]
-	STR R1, [R0, #GPIO_IEN]
+	LDR R0, =GPIO_BASE			//Load GPIO BASE into register R0
+	MOV R1, #0x22222222			//Store hex value 22222222 directly in register R1
+	STR R1, [R0, #GPIO_EXTIPSELL]		//Store R1 in GPIO EXTIPSELL
+	MOV R1, #0xff				//Store hex value FF directly in register R1
+	STR R1, [R0, #GPIO_EXTIFALL]		//Store R1 in GPIO EXTIFALL
+	STR R1, [R0, #GPIO_EXTIRISE]		//Store R1 in EXTIRISE
+	STR R1, [R0, #GPIO_IEN]			//Store R1 in IEN
 
 	LDR R0, =ISER0
 	LDR R1, =#0x802
-	STR R1, [R0, #0x0]
+	STR R1, [R0]
 
 	BX LR
 
 deep_sleep:
 
-	LDR R0, =SCR //System control block
-	MOV R1, #6
-	STR R1, [R0]
+	LDR R0, =SCR 				//Load System control block
+	MOV R1, #6				//Store 6 directly in R1
+	STR R1, [R0]				//Store R1 in SCR to enable deep sleep mode.
 
 	BX LR
 
