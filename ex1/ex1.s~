@@ -134,9 +134,6 @@ register_interrupts:
 	BX LR
 
 deep_sleep:
-	LDR R0, =EMU_BASE
-	MOV R1, #4
-	STR R1, [R0, #0x4]
 
 	LDR R0, =SCR //System control block
 	MOV R1, #6

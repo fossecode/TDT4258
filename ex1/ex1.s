@@ -78,10 +78,10 @@
 
 _reset: 
 	//Branch to different setups, then 
-	//BL register_clock
-//	BL register_led_lights
-//	BL register_buttons
-//	BL register_interrupts
+	BL register_clock
+	BL register_led_lights
+	BL register_buttons
+	BL register_interrupts
 	BL deep_sleep
 	WFI
 
