@@ -77,81 +77,101 @@
 
 
 _reset: 
-	//Branch to different setups (to make program more readable)
+	//Branch and link to different setups (to make program more readable)
 	BL register_clock
 	BL register_led_lights
 	BL register_buttons
+	BL energy_saving
 	BL register_interrupts
-	BL deep_sleep
 	WFI
 
 register_clock:
 	LDR R0, =CMU_BASE			//Load CMU_BASE address into register R0
-	LDR R1, [R0, #CMU_HFPERCLKEN0]		//Load CMU_BASE with offset to CMU_HFPERCLKEN0 into register R1
-	MOV R2, #1				//Store value 1 directly in register R2
+	LDR R1, [R0, #CMU_HFPERCLKEN0]		//Load value of CMU_HFPERCLKEN0 into register R1
+	MOV R2, #1				//Put value 1 directly in register R2
 	LSL R2, R2, #CMU_HFPERCLKEN0_GPIO	//Left shift 1 to the bit enabling CMU_HFPERCLKEN0_GPIO
 	ORR R1, R1, R2				//Use OR to edit the values in CMU_HFPERCLKEN0 so that we dont tamper with other values than the one we want to change.
 	STR R1, [R0, #CMU_HFPERCLKEN0]		//Store result in memory
-	BX LR					//Return to *** (her kan vi kanskje si noe om PC og noe på I han snakket om i forelesning, sjekk foil)
+	BX LR					//Branch back to link register (return)
 
 register_led_lights:
-
-	LDR R0, =GPIO_PA_BASE			//Load GPIO port A base into register R0
-	MOV R2, #0x2				//Store 2 directly in register R2
-	STR R2, [R0, #GPIO_CTRL]		//Store 2 in memory at the address of GPIO CTRL (to enable something?)
-	MOV R2, #0x55555555			//Store hex value 55555555 directly in register R2
+	LDR R0, =GPIO_PA_BASE			//Load GPIO port A base address into register R0
+	MOV R2, #0x2				//Put 2 directly in register R2
+	STR R2, [R0, #GPIO_CTRL]		//Store 2 in memory at the address of GPIO CTRL
+	MOV R2, #0x55555555			//Put hex value 55555555 directly in register R2
 	STR R2, [R0, #GPIO_MODEH]		//Store R2 in memory at the address of GPIO MODE HIGH.
-	BX LR					//Return to ***					
+	BX LR					//Branch back to link register					
 
 register_buttons:
-	LDR R0, =GPIO_PC_BASE			//Load GPIO port C base into register R0
-	MOV R2, #0x33333333			//Store hex value 55555555 directly in register R2
+	LDR R0, =GPIO_PC_BASE			//Load address of GPIO port C base into register R0
+	MOV R2, #0x33333333			//Put hex value 55555555 directly in register R2
 	STR R2, [R0, #GPIO_MODEL]		//Store R2 in memory at the address of GPIO MODE LOW.
-	MOV R2, #0xff				//Store hex value FF directly in register R2
+	MOV R2, #0xff				//Put hex value FF directly in register R2
 	STR R2, [R0, #GPIO_DOUT]		//Store R2 in memory at the address of GPIO DOUT
-	BX LR					//Return to ***
+	BX LR					//Branch back to link register
+
+energy_saving:
+	//Set EM3 (energy mode 3, stop mode, will wake up fast on interrupt)
+	LDR R0, =EMU_BASE			//Load address of EMU Base
+	MOV R1, #0				//Put value 0 directly in R1	
+	STR R1, [R0, #EMU_CTRL]			//Store 0 back to memory at EMU CTRL.	
+
+	//Enable deep sleep
+	LDR R0, =SCR 				//Load System control block
+	MOV R1, #6				//Put 6 directly in R1
+	STR R1, [R0]				//Store R1 in SCR to enable deep sleep mode.
+
+	//Disable some RAM-blocks
+	LDR R0, =EMU_BASE			//Load address of EMU Base
+	MOV R1, #0b1111				//Put binary 1111 directly in R1
+	STR R1, [R0, #EMU_MEMCTRL]		//Store R1 to EMU Memory control.
+
+	//Clock optimization.
+	LDR R0, =CMU_BASE			//Load address of CMU Base
+	MOV R1, #0				//Put 0 in R1
+	STR R1, [R0, #CMU_LFRCOCTRL]		//Store 0 in CMU LFRCOCTRL
+	STR R1, [R0, #CMU_HFRCOCTRL]		//Store 0 in CMU HFRCOCTRL
+
+	//Other things that could be done:
+	// - Prevent GPIO-leakage. All unconnected pins should have GPIO MODEH/MODEL set to 0.
+
+	LDR R0, =GPIO_PB_BASE
+	MOV R1, #0
+	STR R1, [R0, #GPIO_MODEH]	
+	
+	BX LR					//Branch back to link register
+
+	
 
 register_interrupts:
 	LDR R0, =GPIO_BASE			//Load GPIO BASE into register R0
-	MOV R1, #0x22222222			//Store hex value 22222222 directly in register R1
+	MOV R1, #0x22222222			//Put hex value 22222222 directly in register R1
 	STR R1, [R0, #GPIO_EXTIPSELL]		//Store R1 in GPIO EXTIPSELL
-	MOV R1, #0xff				//Store hex value FF directly in register R1
+	MOV R1, #0xff				//Put hex value FF directly in register R1
 	STR R1, [R0, #GPIO_EXTIFALL]		//Store R1 in GPIO EXTIFALL
 	STR R1, [R0, #GPIO_EXTIRISE]		//Store R1 in EXTIRISE
 	STR R1, [R0, #GPIO_IEN]			//Store R1 in IEN
-
-	LDR R0, =ISER0
-	LDR R1, =#0x802
-	STR R1, [R0, #0x0]
-
-	BX LR
-
-deep_sleep:
-
-	LDR R0, =SCR 				//Load System control block
-	MOV R1, #6				//Store 6 directly in R1
-	STR R1, [R0]				//Store R1 in SCR to enable deep sleep mode.
-
-	BX LR
-
+	LDR R0, =ISER0				//Load ISER0 to R1
+	LDR R1, =#0x802				//Store hex value 802 in R1
+	STR R1, [R0]				//Store R1 to address in R0
+	BX LR					//Branch back to link register
 
 .thumb_func
 gpio_handler:
-	LDR R0, =GPIO_PC_BASE
-	LDR R1, [R0, #GPIO_DIN]
-	LSL R1, R1, #8
-	LDR R0, =GPIO_PA_BASE
-	STR R1, [R0, #GPIO_DOUT]
+	LDR R0, =GPIO_BASE			//Load address of GPIO BASE in R0
+	LDR R1, [R0, #GPIO_IF]			//Load value of interrupt flag.
+	STR R1, [R0, #GPIO_IFC]			//Clear interrupt flag
+	LDR R0, =GPIO_PC_BASE			//Load address of GPIO port C base to R0
+	LDR R1, [R0, #GPIO_DIN]			//Load address of GPIO DIN to R1
+	LSL R1, R1, #8				//Leftshifting value of R1 from bit postition 0-7 to position 8-15 which is the corresponding leds in our case.
+	LDR R0, =GPIO_PA_BASE			//Load address of GPIO port A base to R0
+	STR R1, [R0, #GPIO_DOUT]		//Store led values in R1 to GPIO DOUT on port A.
+	BX LR					//Branch back to link register
+	
 
-	LDR R0, =GPIO_BASE
-	LDR R1, [R0, #GPIO_IF]
-	STR R1, [R0, #GPIO_IFC]
-
-	BX LR
 /////////////////////////////////////////////////////////////////////////////
 
 .thumb_func
 dummy_handler:  
 	b .  // do nothing
-
 
