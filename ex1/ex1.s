@@ -130,7 +130,11 @@ energy_saving:
 	LDR R0, =CMU_BASE			//Load address of CMU Base
 	MOV R1, #0				//Put 0 in R1
 	STR R1, [R0, #CMU_LFRCOCTRL]		//Store 0 in CMU LFRCOCTRL (tuning)
+	//LDR R1, [0x0FE081DC]			//Tuning for the 1.2 MHZ HFRCO band
 	STR R1, [R0, #CMU_HFRCOCTRL]		//Store 0 in CMU HFRCOCTRL, (set band and tuning)
+	
+	
+	
 
 	//Other things that could be done:
 	// - Prevent GPIO-leakage. All unconnected pins should have GPIO MODEH/MODEL set to 0.
