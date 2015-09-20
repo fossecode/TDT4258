@@ -123,9 +123,8 @@ energy_saving:
 
 	//Disable some RAM-blocks
 	LDR R0, =EMU_BASE			//Load address of EMU Base
-	MOV R1, #0b1111				//Put binary 1111 directly in R1
-	STR R1, [R0, #EMU_MEMCTRL]		//Store R1 to EMU Memory control.
-
+	MOV R1, #0b111				//Put binary 111 in R1
+	STR R1, [R0, #EMU_MEMCTRL]		//Store R1 to EMU Memory control set powerdown bits for block 1,2,3.
 	//Clock optimization.
 	LDR R0, =CMU_BASE			//Load address of CMU Base
 	MOV R1, #0				//Put 0 in R1
