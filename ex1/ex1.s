@@ -118,7 +118,7 @@ energy_saving:
 
 	//Enable deep sleep
 	LDR R0, =SCR 				//Load System control block
-	MOV R1, #6				//Put 6 directly in R1
+	MOV R1, #0b110				//Put 6 directly in R1
 	STR R1, [R0]				//Store R1 in SCR to enable deep sleep mode.
 
 	//Disable some RAM-blocks

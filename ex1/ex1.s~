@@ -81,7 +81,7 @@ _reset:
 	BL register_clock
 	BL register_led_lights
 	BL register_buttons
-	//BL energy_saving
+	BL energy_saving
 	BL register_interrupts
 	WFI
 
