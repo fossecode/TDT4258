@@ -156,11 +156,11 @@ register_interrupts:
 gpio_handler:
 	LDR R0, =GPIO_BASE			//Load address of GPIO BASE in R0
 	LDR R1, [R0, #GPIO_IF]			//Load value of interrupt flag.
+	STR R1, [R0, #GPIO_IFC]			//Clear interrupt flag
 
 	LDR R0, =GPIO_PC_BASE			//Load address of GPIO port C base to R0
 	LDR R1, [R0, #GPIO_DIN]			//Load address of GPIO DIN to R1
 	LSL R1, R1, #8				//Leftshifting value of R1 from bit postition 0-7 to position 8-15 which is the corresponding leds in our case.
-	STR R1, [R0, #GPIO_IFC]			//Clear interrupt flag
 	LDR R0, =GPIO_PA_BASE			//Load address of GPIO port A base to R0
 	STR R1, [R0, #GPIO_DOUT]		//Store led values in R1 to GPIO DOUT on port A.
 	BX LR					//Branch back to link register
