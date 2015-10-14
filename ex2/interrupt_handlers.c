@@ -15,10 +15,18 @@ void __attribute__ ((interrupt)) TIMER1_IRQHandler()
    *TIMER1_IFC   = 1;
 //   *DAC0_CH0DATA = 0x337;
 //   *DAC0_CH1DATA = 0x337;
-   *DAC0_CH0DATA = noise;
-  *DAC0_CH1DATA = noise;
+
+   // 0bxxxxxxxx11111110
+   // 0b0000000000000001
+   if ((*GPIO_PC_DIN & 0b1) == 0) {
+   	*DAC0_CH0DATA = noise;
+        *DAC0_CH1DATA = noise;
+   }
+ 
 //   *GPIO_PA_DOUT += 4096;
    *TIMER1_TOP = 200;
+
+   // LEDS
    *GPIO_PA_DOUT = 0b1010101000000000;
 }
 
@@ -27,6 +35,9 @@ void __attribute__ ((interrupt)) GPIO_EVEN_IRQHandler()
 {
     /* TODO handle button pressed event, remember to clear pending interrupt */
     *GPIO_IFC = *GPIO_IF;
+
+    // Determine if rise or fall
+    
 //    *GPIO_DIN = GPIO_PC_BASE << 8;
 //    *GPIO_PA_DOUT = 0b111111111111111;
     noise += 250;

@@ -31,7 +31,7 @@ int main(void)
   /* TODO for higher energy efficiency, sleep while waiting for interrupts
      instead of infinite loop for busy-waiting
   */
-  //__asm("WFI");
+  __asm("WFI");
 
   while(1);
 
