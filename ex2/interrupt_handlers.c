@@ -18,7 +18,7 @@ void __attribute__ ((interrupt)) TIMER1_IRQHandler()
 
    // 0bxxxxxxxx11111110
    // 0b0000000000000001
-   if ((*GPIO_PC_DIN & 0b1) == 0) {
+   if ((*GPIO_PC_DIN ^ 0b11111111) == 0) {
    	*DAC0_CH0DATA = noise;
         *DAC0_CH1DATA = noise;
    }
