@@ -20,6 +20,10 @@ ex2.elf : ex2.o timer.o dac.o gpio.o interrupt_handlers.o
 %.o : %.c
 	${CC} ${CFLAGS} -c $< -lm -lc -lnosys -o $@
 
+.PHONY : run
+run   : 
+	-make && sudo make upload
+
 .PHONY : upload
 upload :
 	-/opt/eACommander/eACommander.sh -r --address 0x00000000 -f "ex2.bin" -r
