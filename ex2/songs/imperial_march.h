@@ -1,3 +1,4 @@
+// Lasts for 23875 ms
 struct tune imperial_march[70] = {
     {a,  500},
     {a,  500},    
