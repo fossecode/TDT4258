@@ -25,16 +25,19 @@
 #define gSH 830
 #define aH 880
 
+#define M_PI 3.14159265358979323846
+
 int	   count = 0;
 double noise = 0;
 
-void playSound(double sample){
-    *DAC0_CH0DATA = cos((1*sample));
-    *DAC0_CH1DATA = cos((1*sample));
+void playSound(double pitch){
+    *DAC0_CH0DATA = 0b011111010000;
+    *DAC0_CH1DATA = 0b011111010000;
+    noise += 2* 3.14 /( 44000/pitch);;
 }
 
 void increment(int pitch){
-    noise += 50;
+    noise += pitch;
     /*count += 1;
     if(count > 44000/pitch){
         noise = 0;
@@ -55,20 +58,20 @@ void __attribute__ ((interrupt)) TIMER1_IRQHandler()
 
    	  switch (*GPIO_PC_DIN) {
         case 0b11111110:
-          playSound(noise);
-          increment(a);
+          playSound((double)a);
+          break;
 
         case 0b11111101:
-          playSound(noise);
-          increment(g);
+          playSound((double)b);
+          break;
 
         case 0b11111011:
-          playSound(noise);
-          increment(d);
+          playSound((double)g);
+          break;
 
         case 0b11110111:
-          playSound(noise);
-          increment(c);
+          playSound((double)aH);
+          break;
       }
    }
 }
