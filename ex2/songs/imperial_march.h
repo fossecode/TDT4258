@@ -1,5 +1,5 @@
 // Lasts for 23875 ms
-struct tune imperial_march[70] = {
+struct tune imperial_march[71] = {
     {a,  500},
     {a,  500},    
     {a,  500},
@@ -69,5 +69,6 @@ struct tune imperial_march[70] = {
     {a, 500},            
     {f, 375},            
     {c, 125},            
-    {a, 1000}
+    {a, 1000},
+    {-1, 0}
 };
