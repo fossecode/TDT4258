@@ -25,7 +25,7 @@
 #define gSH 830
 #define aH 880
 
-int count = 0;
+int	   count = 0;
 double noise = 0;
 
 void playSound(double sample){
@@ -46,18 +46,14 @@ void increment(int pitch){
 /* TIMER1 interrupt handler */
 void __attribute__ ((interrupt)) TIMER1_IRQHandler() 
 {  
-  /*
-    TODO feed new samples to the DAC
-    remember to clear the pending interrupt by writing 1 to TIMER1_IFC
-  */  
+   // Clear interrupt flag 
    *TIMER1_IFC   = 1;
-//   *DAC0_CH0DATA = 0x337;
-//   *DAC0_CH1DATA = 0x337;
 
    // 0bxxxxxxxx11111110
    // 0b0000000000000001
    if ((*GPIO_PC_DIN ^ 0b11111111) != 0) {
-   	  switch (*GPIO_PC_DIN){
+
+   	  switch (*GPIO_PC_DIN) {
         case 0b11111110:
           playSound(noise);
           increment(a);
@@ -73,35 +69,21 @@ void __attribute__ ((interrupt)) TIMER1_IRQHandler()
         case 0b11110111:
           playSound(noise);
           increment(c);
-        
       }
-
-
    }
- 
-//   *GPIO_PA_DOUT += 4096;
-
-   // LEDS
 }
-
 
 /* GPIO even pin interrupt handler */
 void __attribute__ ((interrupt)) GPIO_EVEN_IRQHandler() 
 {
-    /* TODO handle button pressed event, remember to clear pending interrupt */
+	// Clear interrupt handler
     *GPIO_IFC = *GPIO_IF;
-
-    // Determine if rise or fall
-    
-//    *GPIO_DIN = GPIO_PC_BASE << 8;
-//    *GPIO_PA_DOUT = 0b111111111111111;
 }
 
 /* GPIO odd pin interrupt handler */
 void __attribute__ ((interrupt)) GPIO_ODD_IRQHandler() 
 {
-    /* TODO handle button pressed event, remember to clear pending interrupt */
-    /* TODO handle button pressed event, remember to clear pending interrupt */
+	// Clear interrupt flag 
     *GPIO_IFC = *GPIO_IF;
 //    *GPIO_DIN = GPIO_PC_BASE << 8;
 //    *GPIO_PA_DOUT = 0xff;
