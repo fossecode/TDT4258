@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include "frequencies.h"
 #include "tune.h"
-#include "imperial_march.h"
+#include "songs/imperial_march.h"
 
 int SAMPLE_RATE = 44000;
 
