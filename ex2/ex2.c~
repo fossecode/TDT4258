@@ -10,7 +10,7 @@
   registers are 16 bits.
 */
 /* The period between sound samples, in clock cycles = 14 000 000 / 44 000 */
-#define SAMPLE_PERIOD 318
+#define SAMPLE_PERIOD 14000000
 
 /* Declaration of peripheral setup functions */
 void setupNVIC();

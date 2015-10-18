@@ -24,7 +24,7 @@ void setupTimer(uint16_t period)
 	*CMU_HFCORECLKEN0 |= (1 << 4); /* Enable LE clock */
 	*LETIMER0_CTRL |= (1 << 9); /* Set COMP0 as TOP register*/
 	*CMU_LFACLKEN0 |= (1 << 2); /* Enable LOW energy timer 0 */
-	*LETIMER0_TOP = 318; /* Set TOP to 1 */
+	*LETIMER0_TOP = 14000000; /* Set TOP to 1 */
 	*LETIMER0_IEN = 1; /* Enable interrupts */
 	*LETIMER0_CMD = 1;
 }
