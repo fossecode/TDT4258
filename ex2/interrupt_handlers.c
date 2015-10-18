@@ -7,10 +7,8 @@
 #include "frequencies.h"
 #include "tune.h"
 #include "songs/imperial_march.h"
-#define sampleFrequency 32748
+#define sampleFrequency 5700.0
 //#include "songs/silent.h"
-
-
 
 
 int toneNumber = 0;
@@ -19,22 +17,22 @@ double noise = 0;
 bool increment = true;
 int current_tune = 0;
 bool off = true;
-double amplitude = 100;
+double amplitude = 1000.0;
 int count = 0;
 
 void playSound(double pitch){
-    
-    if (increment){
-	noise += (1000/((double)sampleFrequency/(double)pitch/4.0));
-    }
-    else{
-       noise -= (1000/((double)sampleFrequency/(double)pitch/4.0));
-   }
+  noise += (amplitude/(sampleFrequency/pitch)); 
+  /*if (increment){
+	   noise += (amplitude/(sampleFrequency/pitch));
+  }
+  else{
+    noise -= (amplitude/(sampleFrequency/pitch));
+  }*/
 
-    *DAC0_CH0DATA = noise;
-    *DAC0_CH1DATA = noise;
-   if (noise < 0) increment = true;
-   else if (noise > amplitude) increment = false;
+  *DAC0_CH0DATA = (int)floor(noise);
+  *DAC0_CH1DATA = (int)floor(noise);
+  //if (noise < 0) increment = true;
+  if (noise > amplitude) noise = 0;
 }
 
 /*Low energy timer */
@@ -45,57 +43,58 @@ void __attribute__ ((interrupt)) LETIMER0_IRQHandler()
 
 	//playSound(318.0);
 
-    if (off && count < 32768){
+  /*if (off && count > sampleFrequency){
 		*GPIO_PA_DOUT = 0b11110000 << 8;
         	off = false;
 		count = 0;
-    }else if (count > 32768){
+    }else if (count > sampleFrequency){
 		*GPIO_PA_DOUT = 0b00001111 << 8;
                 off = true;
 		count = 0;
 	}
-	count = count + 1;
+	count = count + 1;*/
 
-	/*switch(current_tune){
+	switch(current_tune){
 		case 0:
-			break;
-		case 1:*/
-	if (imperial_march[toneNumber].frequency != -1)
-	{
-		playSound(imperial_march[toneNumber].frequency);
-		toneDuration += 1;
-		if (toneDuration >= imperial_march[toneNumber].duration)
-		{
-			//Go to next tone.
-			toneNumber+=1;
-		}
-	}
-	else
-	{
-		//Song is finished;
-		toneDuration = 0;
-	}
-        	/*break;
-		default:
-			break;
-	}*/
-  
-/*
-   if (imperial_march[count].frequency != -1)
-   {
-      playSound(imperial_march[count].frequency);
-      timer1 += 1;
-      if (timer1 > imperial_march[count].duration)
-      {
-        count+=1;
+      if (imperial_march[toneNumber].frequency != -1 ){
+        if (imperial_march[toneNumber].frequency){
+          playSound((double)imperial_march[toneNumber].frequency);
+        }
+        toneDuration += 6;
+        if (toneDuration >= imperial_march[toneNumber].duration){
+          //Go to next tone.
+          toneNumber+=1;
+          toneDuration = 0;
+        }
       }
+      else{
+        //Song is finished;
+        toneDuration = 0;
+        toneNumber = 0;
+        current_tune = -1;
+      } 
+			break;
+		case 1:
+      if (pew_pew[toneNumber].frequency != -1 ){
+        if (pew_pew[toneNumber].frequency){
+          playSound((double)pew_pew[toneNumber].frequency);
+        }
+        toneDuration += 6;
+        if (toneDuration >= pew_pew[toneNumber].duration){
+          //Go to next tone.
+          toneNumber+=1;
+          toneDuration = 0;
+        }
+      }
+      else{
+        //Song is finished;
+        toneDuration = 0;
+        toneNumber = 0;
+        current_tune = -1;
+      } 
+      break;
 
-   }
-   if (imperial_march[count].frequency == -1)
-   {
-     count = 0;
-     timer1 = 0;
-   }*/
+ 
    
 
 
@@ -134,10 +133,13 @@ void __attribute__ ((interrupt)) GPIO_EVEN_IRQHandler()
 	// Clear interrupt handler
     *GPIO_IFC = *GPIO_IF;
     *GPIO_PA_DOUT = *GPIO_PC_DIN << 8;
-    if (*GPIO_PC_DIN == 0b10111111)
-    {
-      current_tune = 0;
-    }
+    switch(*GPIO_PC_DIN)
+      case 0b10111111:
+        amplitude -= 100;
+        break;
+      case 0b11101111:
+        current_tune = 1;
+        break;
 
 }
 
@@ -151,6 +153,6 @@ void __attribute__ ((interrupt)) GPIO_ODD_IRQHandler()
 //    *GPIO_PA_DOUT = 0xff;
     if (*GPIO_PC_DIN == 0b01111111)
     {
-      current_tune = 1;
+      amplitude += 100;
     }
 }
