@@ -30,3 +30,11 @@ void setupTimer(uint16_t period)
 }
 
 
+void timer_start() {
+    *TIMER1_CMD = 1;
+}
+
+void timer_stop() {
+    *TIMER1_CMD = 0;
+}
+

@@ -1,4 +1,5 @@
-struct tune pew_pew[]{
-	{fH, 2000},
-	{gH, 2000}
+struct tune pew_pew[] = {
+	{F, 2000},
+	{C4, 2000},
+	{-1, 0}
 };
