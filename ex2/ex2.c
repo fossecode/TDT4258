@@ -36,8 +36,6 @@ int main(void)
   *SCR = 6;
   __asm("WFI");
 
-  //while(1);
-
   return 0;
 }
 
