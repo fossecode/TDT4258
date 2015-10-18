@@ -7,8 +7,9 @@
 #include "frequencies.h"
 #include "tune.h"
 #include "songs/imperial_march.h"
+#include "songs/mario.h"
+#include "songs/the_final_countdown.h"
 #define sampleFrequency 5700.0
-//#include "songs/silent.h"
 
 
 int toneNumber = 0;
@@ -86,6 +87,31 @@ void __attribute__ ((interrupt)) LETIMER0_IRQHandler()
           toneDuration = 0;
         }
       }
+    case 2:
+      if (the_final_countdown[toneNumber].frequency != -1 ){
+        if (the_final_countdown[toneNumber].frequency){
+          playSound((double)the_final_countdown[toneNumber].frequency);
+        }
+        toneDuration += 6;
+        if (toneDuration >= the_final_countdown[toneNumber].duration){
+          //Go to next tone.
+          toneNumber+=1;
+          toneDuration = 0;
+        }
+      }
+    case 3:
+      if (mario[toneNumber].frequency != -1 ){
+        if (mario[toneNumber].frequency){
+          playSound((double)mario[toneNumber].frequency);
+        }
+        toneDuration += 6;
+        if (toneDuration >= mario[toneNumber].duration){
+          //Go to next tone.
+          toneNumber+=1;
+          toneDuration = 0;
+        }
+      }
+
       else{
         //Song is finished;
         toneDuration = 0;
@@ -102,7 +128,7 @@ void __attribute__ ((interrupt)) LETIMER0_IRQHandler()
    // 0bxxxxxxxx11111110
    // 0b0000000000000001
 
-   if ((*GPIO_PC_DIN ^ 0b11111111) != 0) {
+/*   if ((*GPIO_PC_DIN ^ 0b11111111) != 0) {
 
    	  switch (*GPIO_PC_DIN) {
         case 0b11111110:
@@ -124,7 +150,7 @@ void __attribute__ ((interrupt)) LETIMER0_IRQHandler()
           playSound((double)aH);
           break;
       }
-   }
+   }*/
 }
 
 /* GPIO even pin interrupt handler */
@@ -137,8 +163,17 @@ void __attribute__ ((interrupt)) GPIO_EVEN_IRQHandler()
       case 0b10111111:
         amplitude -= 100;
         break;
-      case 0b11101111:
+      case 0b11111110:
+        current_tune = 0;
+        break;
+      case 0b11111101:
         current_tune = 1;
+        break;
+      case 0b11111011:
+        current_tune = 2;
+        break;
+      case 0b11110111:
+        current_tune = 3;
         break;
 
 }
@@ -151,8 +186,20 @@ void __attribute__ ((interrupt)) GPIO_ODD_IRQHandler()
     *GPIO_PA_DOUT = *GPIO_PC_DIN << 8;
 //    *GPIO_DIN = GPIO_PC_BASE << 8;
 //    *GPIO_PA_DOUT = 0xff;
-    if (*GPIO_PC_DIN == 0b01111111)
-    {
-      amplitude += 100;
-    }
+    switch(*GPIO_PC_DIN)
+      case 0b01111111:
+        amplitude += 100;
+        break;
+      case 0b11111110:
+        current_tune = 0;
+        break;
+      case 0b11111101:
+        current_tune = 1;
+        break;
+      case 0b11111011:
+        current_tune = 2;
+        break;
+      case 0b11110111:
+        current_tune = 3;
+        break;
 }
