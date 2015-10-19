@@ -60,7 +60,7 @@
 
 #define CMU_HFCORECLKEN0_DMA (1 << 0)
 
-//added register pointers for proper setup of Low Energy Timer
+
 #define CMU_LFACLKEN0 ((volatile uint32_t*)(CMU_BASE2 + 0x058))
 #define CMU_LFCLKSEL	((volatile uint32_t*)(CMU_BASE2 + 0x028))
 #define CMU_OSCENCMD ((volatile uint32_t*)(CMU_BASE2 + 0x020))
@@ -69,29 +69,27 @@
 #define CMU2_HFPERCLKEN0_GPIO (1 << 13)
 #define CMU2_HFPERCLKEN0_TIMER1 (1 << 6)
 #define CMU_HFCORECLKEN0_DMA (1 << 0)
-//added register pointers for proper setup of Low Energy Timer
 #define CMU_LFACLKEN0_LETTIMER0 (1 << 2)
-////added register pointers for proper setup of Low Energy Timer
-#define LETIMER0_BASE 0x40082000
-#define LETIMER0_CTRL ((volatile uint32_t*)(LETIMER0_BASE + 0x000))
-#define LETIMER0_CMD ((volatile uint32_t*)(LETIMER0_BASE + 0x004))
-#define LETIMER0_IEN ((volatile uint32_t*)(LETIMER0_BASE + 0x02c))
-#define LETIMER0_IFC ((volatile uint32_t*)(LETIMER0_BASE + 0x028))
-#define LETIMER0_TOP ((volatile uint32_t*)(LETIMER0_BASE + 0x010)) //USE COMP as TOP register
-#define LETIMER0_CNT ((volatile uint32_t*)(LETIMER0_BASE + 0x00c))
-#define LETIMER0_IF ((volatile uint32_t*)(LETTIMER0_BASE + 0x020))
+
+
 
 // TIMER1
-
 #define TIMER1_BASE 0x40010400
-
 #define TIMER1_CMD ((volatile uint32_t*)(TIMER1_BASE + 0x04))
 #define TIMER1_IEN ((volatile uint32_t*)(TIMER1_BASE + 0x0c))
 #define TIMER1_IFC ((volatile uint32_t*)(TIMER1_BASE + 0x18))
 #define TIMER1_TOP ((volatile uint32_t*)(TIMER1_BASE + 0x1c))
 #define TIMER1_CNT ((volatile uint32_t*)(TIMER1_BASE + 0x24))
 
-// LETIMER1
+// LETIMER0
+#define LETIMER0_BASE 0x40082000
+#define LETIMER0_CTRL ((volatile uint32_t*)(LETIMER0_BASE + 0x000))
+#define LETIMER0_CMD ((volatile uint32_t*)(LETIMER0_BASE + 0x004))
+#define LETIMER0_IEN ((volatile uint32_t*)(LETIMER0_BASE + 0x02c))
+#define LETIMER0_IFC ((volatile uint32_t*)(LETIMER0_BASE + 0x028))
+#define LETIMER0_COMP0 ((volatile uint32_t*)(LETIMER0_BASE + 0x010))
+#define LETIMER0_CNT ((volatile uint32_t*)(LETIMER0_BASE + 0x00c))
+#define LETIMER0_IF ((volatile uint32_t*)(LETTIMER0_BASE + 0x020))
 
 // NVIC
 
