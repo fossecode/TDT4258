@@ -12,8 +12,8 @@
 #include "songs/pew_pew.h"
 #define sampleFrequency 5700.0
 
-void setupDAC();
 void resetDAC();
+void setupDAC();
 void startTimer();
 void stopTimer();
 

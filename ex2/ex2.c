@@ -17,6 +17,7 @@ void setupNVIC();
 void setupTimer(uint32_t period);
 void setupGPIO();
 void setupDeepSleep();
+void setupDAC();
 
 
 /* Your code will start executing here */
