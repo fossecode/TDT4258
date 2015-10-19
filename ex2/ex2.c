@@ -15,42 +15,41 @@
 /* Declaration of peripheral setup functions */
 void setupNVIC();
 void setupTimer(uint32_t period);
-void setupDAC();
+void setupGPIO();
+void setupDeepSleep();
 
 
 /* Your code will start executing here */
 int main(void) 
 {  
-  /* Call the peripheral setup functions */
+  // Call the peripheral setup functions
   setupGPIO();
-  setupDAC();
   setupTimer(SAMPLE_PERIOD);
 
-  /* Enable interrupt handling */
+  // Enable interrupt handling
   setupNVIC();
 
-  setEnergyMode3();
+  setupDeepSleep();
 
-  /* TODO for higher energy efficiency, sleep while waiting for interrupts
-     instead of infinite loop for busy-waiting
-  */
+  // Sleep while waiting for interrupts instead of infinite loop for busy-waiting
 
-  *SCR = 6;
-  __asm("WFI");
+  __asm__("wfi");
 
   return 0;
 }
 
 void setupNVIC()
 {
-  /* Enable LETIMER0, GPIO odd and GPIO even interrupt handling. */
+  // Enable LETIMER0, GPIO odd and GPIO even interrupt handling.
   *ISER0 |= 0x4000802;
 }
 
-void setEnergyMode3()
+void setupDeepSleep()
 {
-  /* Set EM3 */
-  *EMU_CTRL = 0;  
+  // Set Energy Mode 3.
+  *EMU_CTRL = 0;
+  // Enable deep sleep.
+  *SCR = 6;
 }
 
 /* if other interrupt handlers are needed, use the following names: 

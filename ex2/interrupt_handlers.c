@@ -12,6 +12,11 @@
 #include "songs/pew_pew.h"
 #define sampleFrequency 5700.0
 
+void setupDAC();
+void resetDAC();
+void startTimer();
+void stopTimer();
+
 int toneNumber = 0;
 int toneDuration  = 0;
 double sample = 0;
@@ -31,12 +36,22 @@ void songFinished(){
 	toneNumber = 0;
 	current_tune = -1;
 	stopTimer();
+        resetDAC();
 }
 
 void nextTone(){
 	//Go to next tone.
         toneNumber+=1;
         toneDuration = 0;
+}
+
+void initSong(){
+	// End song if a song is currently running.
+	songFinished();
+	// Setup the dac
+	setupDAC();
+	// Start the timer
+	startTimer();
 }
 
 /*Low energy timer */
@@ -116,13 +131,11 @@ void __attribute__ ((interrupt)) GPIO_EVEN_IRQHandler()
         amplitude -= 100;
         break;
       case 0b11111110:
-	songFinished();
-	startTimer();
+	initSong();
         current_tune = 0;
         break;
       case 0b11111011:
-	songFinished();
-	startTimer();
+	initSong();
         current_tune = 2;
         break;
     }
@@ -141,13 +154,11 @@ void __attribute__ ((interrupt)) GPIO_ODD_IRQHandler()
         amplitude += 100;
         break;
       case 0b11111101:
-	songFinished();
-	startTimer();
+	initSong();
         current_tune = 1;
         break;
       case 0b11110111:
-	songFinished();
-	startTimer();
+	initSong();
         current_tune = 3;
         break;
     }

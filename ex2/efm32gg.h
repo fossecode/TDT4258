@@ -60,7 +60,6 @@
 
 #define CMU_HFCORECLKEN0_DMA (1 << 0)
 
-
 #define CMU_LFACLKEN0 ((volatile uint32_t*)(CMU_BASE2 + 0x058))
 #define CMU_LFCLKSEL	((volatile uint32_t*)(CMU_BASE2 + 0x028))
 #define CMU_OSCENCMD ((volatile uint32_t*)(CMU_BASE2 + 0x020))
@@ -70,8 +69,6 @@
 #define CMU2_HFPERCLKEN0_TIMER1 (1 << 6)
 #define CMU_HFCORECLKEN0_DMA (1 << 0)
 #define CMU_LFACLKEN0_LETTIMER0 (1 << 2)
-
-
 
 // TIMER1
 #define TIMER1_BASE 0x40010400
@@ -87,7 +84,7 @@
 #define LETIMER0_CMD ((volatile uint32_t*)(LETIMER0_BASE + 0x004))
 #define LETIMER0_IEN ((volatile uint32_t*)(LETIMER0_BASE + 0x02c))
 #define LETIMER0_IFC ((volatile uint32_t*)(LETIMER0_BASE + 0x028))
-#define LETIMER0_COMP0 ((volatile uint32_t*)(LETIMER0_BASE + 0x010))
+#define LETIMER0_COMP0	 ((volatile uint32_t*)(LETIMER0_BASE + 0x010))
 #define LETIMER0_CNT ((volatile uint32_t*)(LETIMER0_BASE + 0x00c))
 #define LETIMER0_IF ((volatile uint32_t*)(LETTIMER0_BASE + 0x020))
 
