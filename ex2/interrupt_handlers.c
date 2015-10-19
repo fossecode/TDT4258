@@ -47,7 +47,9 @@ void nextTone(){
 
 void initSong(){
 	// End song if a song is currently running.
-	songFinished();
+	toneDuration = 0;
+	toneNumber = 0;
+	current_tune = -1;
 	// Setup the dac
 	setupDAC();
 	// Start the timer
