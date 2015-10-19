@@ -25,11 +25,11 @@ void setupTimer(uint16_t period)
 }
 
 
-void timer_start() {
+void startTimer() {
     *LETIMER0_CMD = 1; // Start timer
 }
 
-void timer_stop() {
+void stopTimer() {
     *LETIMER0_CMD = 2; // Stop timer
 }
 

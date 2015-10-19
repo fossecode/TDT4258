@@ -8,25 +8,21 @@
 #include "tune.h"
 #include "songs/imperial_march.h"
 #include "songs/mario.h"
-#include "songs/the_final_countdown.h"
+#include "songs/beep.h"
 #include "songs/pew_pew.h"
 #define sampleFrequency 5700.0
 
-
 int toneNumber = 0;
 int toneDuration  = 0;
-double noise = 0;
-bool increment = true;
+double sample = 0;
 int current_tune = -1;
-bool off = true;
 double amplitude = 1000.0;
-int count = 0;
 
 void playSound(double pitch){
-  noise += (amplitude/(sampleFrequency/pitch)); 
-  *DAC0_CH0DATA = (int)floor(noise);
-  *DAC0_CH1DATA = (int)floor(noise);
-  if (noise > amplitude) noise = 0;
+  sample += (amplitude/(sampleFrequency/pitch)); 
+  *DAC0_CH0DATA = (int)floor(sample);
+  *DAC0_CH1DATA = (int)floor(sample);
+  if (sample > amplitude) sample = 0;
 }
 
 void songFinished(){
@@ -35,6 +31,12 @@ void songFinished(){
 	toneNumber = 0;
 	current_tune = -1;
 	stopTimer();
+}
+
+void nextTone(){
+	//Go to next tone.
+        toneNumber+=1;
+        toneDuration = 0;
 }
 
 /*Low energy timer */
@@ -51,9 +53,7 @@ void __attribute__ ((interrupt)) LETIMER0_IRQHandler()
         }
         toneDuration += 6;
         if (toneDuration >= imperial_march[toneNumber].duration){
-          //Go to next tone.
-          toneNumber+=1;
-          toneDuration = 0;
+          nextTone();
         }
       }
       else{
@@ -67,9 +67,7 @@ void __attribute__ ((interrupt)) LETIMER0_IRQHandler()
         }
         toneDuration += 6;
         if (toneDuration >= pew_pew[toneNumber].duration){
-          //Go to next tone.
-          toneNumber+=1;
-          toneDuration = 0;
+          nextTone();
         }
       }
       else{
@@ -83,9 +81,7 @@ void __attribute__ ((interrupt)) LETIMER0_IRQHandler()
         }
         toneDuration += 6;
         if (toneDuration >= beep[toneNumber].duration){
-          //Go to next tone.
-          toneNumber+=1;
-          toneDuration = 0;
+          nextTone();
         }
       }
       else{
@@ -99,9 +95,7 @@ void __attribute__ ((interrupt)) LETIMER0_IRQHandler()
         }
         toneDuration += 6;
         if (toneDuration >= mario[toneNumber].duration){
-          //Go to next tone.
-          toneNumber+=1;
-          toneDuration = 0;
+          nextTone();
         }
       }
       else{
@@ -122,10 +116,12 @@ void __attribute__ ((interrupt)) GPIO_EVEN_IRQHandler()
         amplitude -= 100;
         break;
       case 0b11111110:
+	songFinished();
 	startTimer();
         current_tune = 0;
         break;
       case 0b11111011:
+	songFinished();
 	startTimer();
         current_tune = 2;
         break;
@@ -145,10 +141,12 @@ void __attribute__ ((interrupt)) GPIO_ODD_IRQHandler()
         amplitude += 100;
         break;
       case 0b11111101:
+	songFinished();
 	startTimer();
         current_tune = 1;
         break;
       case 0b11110111:
+	songFinished();
 	startTimer();
         current_tune = 3;
         break;
