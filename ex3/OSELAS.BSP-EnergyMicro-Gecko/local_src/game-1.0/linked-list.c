@@ -2,50 +2,47 @@
 #include<stdlib.h>
 #include<stdbool.h>
 
-struct test_struct
+struct coordinate
 {
-    int val;
-    struct test_struct *next;
+    int x;
+    int y;
+    struct coordinate *next;
 };
 
-struct test_struct *head = NULL;
-struct test_struct *curr = NULL;
+struct coordinate *head = NULL;
+struct coordinate *curr = NULL;
 
-struct test_struct* create_list(int val)
+struct coordinate* create_list(int x, int y)
 {
-    printf("\n creating list with headnode as [%d]\n",val);
-    struct test_struct *ptr = (struct test_struct*)malloc(sizeof(struct test_struct));
+    struct coordinate *ptr = (struct coordinate*)malloc(sizeof(struct coordinate));
     if(NULL == ptr)
     {
         printf("\n Node creation failed \n");
         return NULL;
     }
-    ptr->val = val;
+    ptr->x = x;
+    ptr->y = y;
     ptr->next = NULL;
 
     head = curr = ptr;
     return ptr;
 }
 
-struct test_struct* add_to_list(int val, bool add_to_end)
+struct coordinate* add_to_list(int x, int y, bool add_to_end)
 {
     if(NULL == head)
     {
-        return (create_list(val));
+        return (create_list(x, y));
     }
 
-    if(add_to_end)
-        printf("\n Adding node to end of list with value [%d]\n",val);
-    else
-        printf("\n Adding node to beginning of list with value [%d]\n",val);
-
-    struct test_struct *ptr = (struct test_struct*)malloc(sizeof(struct test_struct));
+    struct coordinate *ptr = (struct coordinate*)malloc(sizeof(struct coordinate));
     if(NULL == ptr)
     {
         printf("\n Node creation failed \n");
         return NULL;
     }
-    ptr->val = val;
+    ptr->x = x;
+    ptr->y = y;
     ptr->next = NULL;
 
     if(add_to_end)
@@ -61,17 +58,15 @@ struct test_struct* add_to_list(int val, bool add_to_end)
     return ptr;
 }
 
-struct test_struct* search_in_list(int val, struct test_struct **prev)
+struct coordinate* search_in_list(int x, int y, struct coordinate **prev)
 {
-    struct test_struct *ptr = head;
-    struct test_struct *tmp = NULL;
+    struct coordinate *ptr = head;
+    struct coordinate *tmp = NULL;
     bool found = false;
-
-    printf("\n Searching the list for value [%d] \n",val);
 
     while(ptr != NULL)
     {
-        if(ptr->val == val)
+        if(ptr->x == x && ptr->y == y)
         {
             found = true;
             break;
@@ -89,53 +84,39 @@ struct test_struct* search_in_list(int val, struct test_struct **prev)
             *prev = tmp;
         return ptr;
     }
-    else
-    {
-        return NULL;
-    }
+    
+    return NULL;
 }
 
-int delete_from_list(int val)
+int delete_last()
 {
-    struct test_struct *prev = NULL;
-    struct test_struct *del = NULL;
+    struct coordinate *last = NULL;
+    struct coordinate *ptr = head;
 
-    printf("\n Deleting value [%d] from list\n",val);
-
-    del = search_in_list(val,&prev);
-    if(del == NULL)
+    while(ptr != NULL)
     {
-        return -1;
-    }
-    else
-    {
-        if(prev != NULL)
-            prev->next = del->next;
-
-        if(del == curr)
+        if(ptr->next->next == NULL)
         {
-            curr = prev;
-        }
-        else if(del == head)
-        {
-            head = del->next;
+            last = ptr->next;
+            free(last);
+            ptr->next = NULL;
+            break;
+        } else {
+            ptr = ptr->next;
         }
     }
-
-    free(del);
-    del = NULL;
-
     return 0;
 }
 
+
 void print_list(void)
 {
-    struct test_struct *ptr = head;
+    struct coordinate *ptr = head;
 
     printf("\n -------Printing list Start------- \n");
     while(ptr != NULL)
     {
-        printf("\n [%d] \n",ptr->val);
+        printf("\n [x: %d, y: %d] \n",ptr->x, ptr->y);
         ptr = ptr->next;
     }
     printf("\n -------Printing list End------- \n");
@@ -145,47 +126,17 @@ void print_list(void)
 
 int main(void)
 {
-    int i = 0, ret = 0;
-    struct test_struct *ptr = NULL;
+    struct coordinate *ptr = NULL;
+
+    for(int i = 1; i<10; i++)
+        add_to_list(i,i,false);
 
     print_list();
-
-    for(i = 5; i<10; i++)
-        add_to_list(i,true);
-
+    delete_last();
+    delete_last();
+    delete_last();
+    delete_last();
     print_list();
-
-    for(i = 4; i>0; i--)
-        add_to_list(i,false);
-
-    print_list();
-
-    for(i = 1; i<10; i += 4)
-    {
-        ptr = search_in_list(i, NULL);
-        if(NULL == ptr)
-        {
-            printf("\n Search [val = %d] failed, no such element found\n",i);
-        }
-        else
-        {
-            printf("\n Search passed [val = %d]\n",ptr->val);
-        }
-
-        print_list();
-
-        ret = delete_from_list(i);
-        if(ret != 0)
-        {
-            printf("\n delete [val = %d] failed, no such element found\n",i);
-        }
-        else
-        {
-            printf("\n delete [val = %d]  passed \n",i);
-        }
-
-        print_list();
-    }
 
     return 0;
 }
