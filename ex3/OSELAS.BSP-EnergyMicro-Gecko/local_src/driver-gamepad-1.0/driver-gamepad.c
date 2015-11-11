@@ -11,12 +11,20 @@
 #include <linux/ioport.h>
 #include "efm32gg.h"
 #include <linux/interrupt.h>
+#include <asm/uaccess.h>
+#include <linux/string.h>
+
 
 struct cdev my_cdev;
 dev_t my_dev;
 struct class *cl;
 
+static char *direction;
+
 #define GPIO_IF        ((volatile uint32_t*)(GPIO_PA_BASE + 0x114))
+
+static char   message[256] = {0};           ///< Memory for the string that is passed from userspace
+static short  size_of_message;    
 
 
 /* User program opens the driver */
@@ -40,15 +48,31 @@ static struct file_operations my_fops = {
 };
 
 static irqreturn_t ODD_IRQ_HANDLER(int irq, void *dev_id, struct pt_regs *regs){
-	printk("ODD");
-
+	switch(*GPIO_PC_DIN){
+      case 0b11111101:
+      	direction = "up";
+      	printk("up");
+        break;
+      case 0b11110111:
+      	direction = "down";
+      	printk("down");
+        break;
+    }
 	*GPIO_IFC = *GPIO_IF;
 	return 0;
 }
 
 static irqreturn_t EVEN_IRQ_HANDLER(int irq, void *dev_id, struct pt_regs *regs){
-	printk("EVEN");
-
+	switch(*GPIO_PC_DIN){
+      case 0b11111110:
+      	direction = "left";
+      	printk("left");
+        break;
+      case 0b11111011:
+      	direction = "right";
+      	printk("right");
+        break;
+    }
 	*GPIO_IFC = *GPIO_IF;
 	return 0;
 }
@@ -119,6 +143,7 @@ static int __init template_init(void)
 
 /* User program opens the driver */
 static int open_driver(struct inode *inode, struct file *filp){
+	direction = "none";
 	return 0;
 }
 
@@ -129,7 +154,13 @@ static int release_driver(struct inode *inode, struct file *filp){
 
 /* User program reads from the driver */
 static int read_driver(struct file *filp, char __user *buff, size_t count, loff_t *offp){
-	return GPIO_PC_DIN;
+	sprintf(message, direction , buff, 1);
+	int error_count = 0;
+   	// copy_to_user has the format ( * to, *from, size) and returns 0 on success
+   	error_count = copy_to_user(buff, message, strlen("message"));
+	direction = "none";
+ 
+ 	return error_count;
 }
 
 /* User program writes to the the driver */
