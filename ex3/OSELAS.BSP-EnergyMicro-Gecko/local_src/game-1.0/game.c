@@ -53,7 +53,7 @@ void createNewFood()
 		createNewFood();
 	} else {
 		printf("\nFood generated on [x: %d, y: %d] \n",food->x, food->y);
-		drawRect(food->x, food->y);
+		drawRect(food->x, food->y, true);
 	}
 	return;
 }
@@ -88,7 +88,7 @@ void moveSnake()
 	else{
 	    //Add to beginning of snake
 	    add_to_list(newCoord->x, newCoord->y, false);
-	    drawRect(newCoord->x, newCoord->y);
+	    drawRect(newCoord->x, newCoord->y, false);
 
 		//check if new coordinate contains food.
 		if (coordinateIsFood(*newCoord)){
@@ -163,13 +163,16 @@ void changeSnakeDirection(int dir)
 	direction = dir;
 }
 
-void drawRect(int x, int y){
-	memset(fbp, 0xFFFF, screensize);
+void drawRect(int x, int y, bool food){
+	if (food)
+		memset(fbp, 0x03F0, screensize);
+	else	
+		memset(fbp, 0xFFFF, screensize);
     struct fb_copyarea rect;
-	rect.dx= x*10;
-	rect.dy=y*10;
-	rect.width=10;
-	rect.height=10;
+	rect.dx= (x*10) + 1;
+	rect.dy= (y*10) + 1;
+	rect.width= 8;
+	rect.height= 8;
 
 	ioctl(fbfd,0x4680,&rect);
 }
@@ -177,10 +180,10 @@ void drawRect(int x, int y){
 void removeRect(int x, int y){
 	memset(fbp, 0x0000, screensize);
     struct fb_copyarea rect;
-	rect.dx= x*10;
-	rect.dy=y*10;
-	rect.width=10;
-	rect.height=10;
+	rect.dx= (x*10) + 1;
+	rect.dy= (y*10) + 1;
+	rect.width=8;
+	rect.height=8;
 
 	ioctl(fbfd,0x4680,&rect);
 }
@@ -226,7 +229,7 @@ int main(int argc, char *argv[])
 	srand(time(NULL));
 	initSnake();
 	while (1){
-		usleep(150000);
+		usleep(100000);
 		char buf[100];
 		char i = 0;
 		memset(buf, 0, 100);
