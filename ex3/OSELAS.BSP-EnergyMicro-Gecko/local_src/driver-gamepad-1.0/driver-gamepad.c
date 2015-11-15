@@ -11,6 +11,7 @@
 #include <linux/ioport.h>
 #include "efm32gg.h"
 #include <linux/interrupt.h>
+#include <linux/irq.h>
 #include <linux/string.h>
 #include <linux/signal.h>
 
@@ -25,18 +26,45 @@
 #include <asm/uaccess.h>
 #include <asm/siginfo.h>
 
+ #include <linux/kernel.h>
+#include <linux/module.h>
+#include <linux/init.h>
+#include <linux/moduleparam.h>
+#include <linux/kdev_t.h>
+#include <linux/signal.h>
+#include <linux/interrupt.h>
+#include <linux/fs.h>
+#include <linux/cdev.h>
+#include <linux/ioport.h>
+#include <linux/types.h>
+#include <linux/rcupdate.h>
+#include <linux/sched.h>
+//#include <linux/semaphore.h>
+#include <linux/device.h>
+
+#include <asm/io.h>
+#include <asm/uaccess.h>
+#include <asm/siginfo.h>
+
+#include "efm32gg.h"
+
 struct siginfo signal_info;
 struct task_struct *task;
 struct cdev my_cdev;
 dev_t my_dev;
 struct class *cl;
+bool enabled = false;
 
-static char *direction;
 static irqreturn_t IRQ_HANDLER(int irq, void *dummy, struct pt_regs * regs);
-#define GPIO_IF        ((volatile uint32_t*)(GPIO_PA_BASE + 0x114))
+static void setupGPIO();
 
 static char   message[256] = {0};           ///< Memory for the string that is passed from userspace
 static short  size_of_message;    
+
+static void memwrite(void *base, uint32_t offset, uint32_t value);
+static uint32_t memread(void *base, uint32_t offset);
+
+void __iomem *gpio;
 
 
 /* User program opens the driver */
@@ -59,9 +87,20 @@ static struct file_operations my_fops = {
 	.release = release_driver
 };
 
+void memwrite(void *base, uint32_t offset, uint32_t value)
+{
+    *(volatile uint32_t *) ((uint32_t) base + offset) = value;
+}
+
+uint32_t memread(void *base, uint32_t offset)
+{
+    return *(volatile uint32_t *) ((uint32_t) base + offset);
+}
+
+
 static irqreturn_t IRQ_HANDLER(int irq, void *dev_id, struct pt_regs * regs)
 {
-	int direction;
+	int direction = 0;
 	switch(*GPIO_PC_DIN){
       case 0b11111101:
       	direction = 3;
@@ -79,57 +118,37 @@ static irqreturn_t IRQ_HANDLER(int irq, void *dev_id, struct pt_regs * regs)
       	direction = 0;
       	printk("right");
         break;
+      default:
+      	direction = 0;
+      	break;
     }
 
 	//Set the signal value to the reversed button value(Because they are active low)
 	signal_info.si_int = direction;	
+
+    //Resets the interrupt
+	//memwrite(gpio, GPIO_IFC, 0xFFFF);
 	*GPIO_IFC = *GPIO_IF;
-	
+
 	//Checks if everything is up and running and sends the signal to the game.
-
-	int status = send_sig_info(50, &signal_info, task);
-	if (status < 0)
-	{
-		printk("Unable to send interrupt\n");
-		return -1;
-	}
-	else
-	{
-		printk("Driver not enabled\n");
-		return -1;
-	}
-	return 0;
-}
-
-static irqreturn_t ODD_IRQ_HANDLER(int irq, void *dev_id, struct pt_regs *regs){
-	switch(*GPIO_PC_DIN){
-      case 0b11111101:
-      	direction = "up";
-      	printk("up");
-        break;
-      case 0b11110111:
-      	direction = "down";
-      	printk("down");
-        break;
+    if(enabled)
+    {
+        int status = send_sig_info(50, &signal_info, task);
+        if (status < 0)
+        {
+            printk("Unable to send interrupt\n");
+            return IRQ_NONE;
+        }
     }
-	*GPIO_IFC = *GPIO_IF;
-	return 0;
+    else
+    {
+        printk("Driver not enabled\n");
+        return IRQ_NONE;
+    }
+
+	return IRQ_HANDLED;
 }
 
-static irqreturn_t EVEN_IRQ_HANDLER(int irq, void *dev_id, struct pt_regs *regs){
-	switch(*GPIO_PC_DIN){
-      case 0b11111110:
-      	direction = "left";
-      	printk("left");
-        break;
-      case 0b11111011:
-      	direction = "right";
-      	printk("right");
-        break;
-    }
-	*GPIO_IFC = *GPIO_IF;
-	return 0;
-}
 
 /* function to set up GPIO mode and interrupts*/
 static void setupGPIO()
@@ -139,7 +158,7 @@ static void setupGPIO()
   /* Example of HW access from C code: turn on joystick LEDs D4-D8
      check efm32gg.h for other useful register definitions
   */
-  *CMU_HFPERCLKEN0 |= CMU2_HFPERCLKEN0_GPIO; /* enable GPIO clock*/
+  //*CMU_HFPERCLKEN0 |= CMU2_HFPERCLKEN0_GPIO; /* enable GPIO clock*/
   *GPIO_PA_CTRL = 2;  /* set high drive strength */
   *GPIO_PA_MODEH = 0x55555555; /* set pins A8-15 as output */
 /*  *GPIO_PA_DOUT = 0x0700; turn on LEDs D4-D8 (LEDs are active low) */ 
@@ -149,13 +168,11 @@ static void setupGPIO()
 
   *GPIO_EXTIPSELL = 0x22222222;
   *GPIO_EXTIFALL  = 0xFF;
-  *GPIO_EXTIRISE  = 0xFF;
 
   *GPIO_IEN = 0xff;
   *GPIO_PA_DOUT = 0b1111111100000000;
 
   *ISER0 |= 0x4000802;
-
 
 }
 
@@ -171,29 +188,36 @@ static void setupGPIO()
 
 static int __init template_init(void)
 {
+	alloc_chrdev_region(&my_dev ,0 , 1, "driver-gamepad");
+	check_mem_region(GPIO_BASE, GPIO_SIZE);
+	request_mem_region(GPIO_BASE, GPIO_SIZE, "driver-gamepad");
+
+	gpio = ioremap_nocache(GPIO_BASE, GPIO_SIZE);
+	setupGPIO();
 
 	request_irq(17, IRQ_HANDLER, NULL, "button_click", NULL);
 	request_irq(18, IRQ_HANDLER, NULL, "button_click", NULL);
-	
-	alloc_chrdev_region(&my_dev ,0 , 1, "driver-gamepad");
-	cdev_init(&my_cdev, &my_fops);
-
-	cl = class_create(THIS_MODULE, "driver-gamepad");
-	device_create(cl, NULL, my_dev, NULL, "driver-gamepad");
-
-	*request_region(GPIO_PA_BASE, 0x120, "driver-gamepad");
-	*request_region(CMU_BASE2, 0x058, "driver-gamepad");
-	*request_region(ISER0, 0x4, "driver-gamepad");
-
-	setupGPIO();
-
-	cdev_add(&my_cdev, my_dev, 1);
-	printk("Hello world, here is your module speaking\n");
 
 	//Setup signal sending, to trigger interrupts in the game.
 	memset(&signal_info, 0, sizeof(struct siginfo));
 	signal_info.si_signo = 50;
 	signal_info.si_code = SI_QUEUE;
+	
+	
+	cdev_init(&my_cdev, &my_fops);
+	my_cdev.owner = THIS_MODULE;
+	cdev_add(&my_cdev, my_dev, 1);
+
+	cl = class_create(THIS_MODULE, "driver-gamepad");
+	device_create(cl, NULL, my_dev, NULL, "driver-gamepad");
+
+	/**request_region(GPIO_PA_BASE, 0x120, "driver-gamepad");
+	*request_region(CMU_BASE2, 0x058, "driver-gamepad");
+	*request_region(ISER0, 0x4, "driver-gamepad");*/
+	
+	printk("Hello world, here is your module speaking\n");
+
+	
 	return 0;
 }
 
@@ -202,7 +226,7 @@ static int __init template_init(void)
 
 /* User program opens the driver */
 static int open_driver(struct inode *inode, struct file *filp){
-	direction = "none";
+	enabled = true;
 	return 0;
 }
 
@@ -213,11 +237,11 @@ static int release_driver(struct inode *inode, struct file *filp){
 
 /* User program reads from the driver */
 static int read_driver(struct file *filp, char __user *buff, size_t count, loff_t *offp){
-	sprintf(message, direction , buff, 1);
+	//sprintf(message, direction , buff, 1);
 	int error_count = 0;
    	// copy_to_user has the format ( * to, *from, size) and returns 0 on success
    	error_count = copy_to_user(buff, message, strlen("message"));
-	direction = "none";
+
  
  	return error_count;
 }
@@ -246,6 +270,7 @@ static int write_driver(struct file *filp, const char __user *buff, size_t count
 		return -1;
 	}
 	rcu_read_unlock();
+	printk("write pid ------ %d\n", pid);
 	return count;
 }
 

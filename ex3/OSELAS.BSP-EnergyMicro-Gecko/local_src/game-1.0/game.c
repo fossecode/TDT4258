@@ -1,6 +1,31 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <linux/signal.h>
+#include <asm/siginfo.h>
+#include <sys/mman.h>
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <sys/types.h> 
+#include <sys/stat.h> 
+#include <fcntl.h> 
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <linux/fb.h>
+#include <fcntl.h>
+#include <unistd.h>
+#include <stdint.h>
+#include <string.h>
+#include <inttypes.h>
+#include <stdbool.h>
+#include <unistd.h>
+
+#include <sys/mman.h>
+#include <sys/stat.h>
+#include <sys/ioctl.h>
+
 #include "linked-list.c"
 #define XCOORDS 40
 #define YCOORDS 30
@@ -163,17 +188,38 @@ void printGame(){
 
 void interrupt_handler(int n, siginfo_t *info, void *unused)
 {
-	int direction = info->si_int;
+	printf("HALSLSALDLLASO\n");
+	direction = 1;
+	printf("%d\n",direction );
+	changeSnakeDirection(direction);
 	
-	printf("helllooooe %d\n", direction);
+	printf("-----INTERRUPT ------ %d\n", direction);
 }
 
 int main(int argc, char *argv[])
 {
+
+	//Open the gamepad driver and exit if an error occurs
+    int gamepad = open("/dev/driver-gamepad", O_RDWR);
+    if(gamepad < 0)
+    {
+        printf("Error: opening gamepad file\n");
+        return 1;
+    }
+
+	 // Setup signal handling
+    struct sigaction sign;
+    sign.sa_sigaction = interrupt_handler;
+    sign.sa_flags = SA_SIGINFO;
+    sigaction(50, &sign, NULL);
+    char pid_array[5];
+    sprintf(pid_array, "%d", getpid());
+    write(gamepad, pid_array, strlen(pid_array) +1);
+
 	//Use current time as seed for random generator
 	srand(time(NULL));
 	initSnake();
-	while (1){
+	/*while (0){
 		char ch = 0;
 		printf("Type in a direction WASD and then click enter.\n");
 		scanf(" %c", &ch);
@@ -193,11 +239,14 @@ int main(int argc, char *argv[])
 		}
 		moveSnake();
 		printGame();
-	}
+	}*/
 
 	//printf("Hello World, I'm game!\n");
 
-
-
-	exit(EXIT_SUCCESS);
+	while (1){
+		sleep(1000);
+		moveSnake();
+		printGame();
+	}
+	//exit(EXIT_SUCCESS);
 }
