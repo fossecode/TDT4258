@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-<<<<<<< HEAD
 #include <sys/types.h> 
 #include <sys/stat.h> 
 #include <fcntl.h> 
@@ -11,7 +10,7 @@
 /*int length = 4;
 
 //0 = east, 1 = south, 2 = west, 3 = north
-=======
+
 #include <time.h>
 #include "linked-list.c"
 #define XCOORDS 40
@@ -30,7 +29,7 @@ void changeSnakeDirection();
 void printGame();
 
 //0 = east, 1 = south, 2 = west, 3 = north. Starting direction east.
->>>>>>> master
+
 int direction = 0;
 
 struct coordinate *food = NULL;
@@ -212,9 +211,6 @@ int main(int argc, char *argv[])
 	}
 
 	//printf("Hello World, I'm game!\n");
-
-
->>>>>>> master
 
 	while(1){
 		while(read(fp, &buf[i++],100));
