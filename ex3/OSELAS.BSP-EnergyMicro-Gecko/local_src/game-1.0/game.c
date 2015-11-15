@@ -160,6 +160,48 @@ void printGame(){
 	printf("__________________________________________________________________________________\n");
 }
 
+void interrupt_handler(int n, siginfo_t *info, void *unused)
+{
+	uint8_t buttons = (uint8_t) (info->si_int);
+	int newx = posX;
+	int newy = posY;
+	
+	//Checks the button pressed values
+	if(buttons == 1)
+	{
+		newx--;
+	}
+	else if(buttons == 2)
+	{
+		newy--;
+	}
+	else if(buttons == 4)
+	{
+		newx++;
+	}
+	else if(buttons == 8)
+	{
+		newy++;
+	}
+	else if(buttons == 128)
+	{
+		//Checks if the square is taken, if it is free the player will pick it
+		if(board[posX][posY] == 0)
+			select_frame();
+		else
+			printf("Square taken\n");
+	}
+	
+	if(newy != posY || newx != posX)
+	{
+	//Checks if the move is legal, if it is, the active square will be changed
+	if(check_move(newx, newy) == 1)
+	move(newx, newy);
+	else
+	printf("Illegal move\n");
+	}
+}
+
 int main(int argc, char *argv[])
 {
 	//Use current time as seed for random generator

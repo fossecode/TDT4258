@@ -11,16 +11,28 @@
 #include <linux/ioport.h>
 #include "efm32gg.h"
 #include <linux/interrupt.h>
-#include <asm/uaccess.h>
 #include <linux/string.h>
+#include <linux/signal.h>
 
+#include <linux/moduleparam.h>
+#include <linux/kdev_t.h>
+#include <linux/ioport.h>
+#include <linux/types.h>
+#include <linux/rcupdate.h>
+#include <linux/sched.h>
 
+#include <asm/io.h>
+#include <asm/uaccess.h>
+#include <asm/siginfo.h>
+
+struct siginfo signal_info;
+struct task_struct *task;
 struct cdev my_cdev;
 dev_t my_dev;
 struct class *cl;
 
 static char *direction;
-
+static irqreturn_t IRQ_HANDLER(int irq, void *dummy, struct pt_regs * regs);
 #define GPIO_IF        ((volatile uint32_t*)(GPIO_PA_BASE + 0x114))
 
 static char   message[256] = {0};           ///< Memory for the string that is passed from userspace
@@ -46,6 +58,48 @@ static struct file_operations my_fops = {
 	.open = open_driver,
 	.release = release_driver
 };
+
+static irqreturn_t IRQ_HANDLER(int irq, void *dev_id, struct pt_regs * regs)
+{
+	int direction;
+	switch(*GPIO_PC_DIN){
+      case 0b11111101:
+      	direction = 3;
+      	printk("up");
+        break;
+      case 0b11110111:
+      	direction = 1;
+      	printk("down");
+        break;
+	  case 0b11111110:
+      	direction = 2;
+      	printk("left");
+        break;
+      case 0b11111011:
+      	direction = 0;
+      	printk("right");
+        break;
+    }
+
+	//Set the signal value to the reversed button value(Because they are active low)
+	signal_info.si_int = direction;	
+	*GPIO_IFC = *GPIO_IF;
+	
+	//Checks if everything is up and running and sends the signal to the game.
+
+	int status = send_sig_info(50, &signal_info, task);
+	if (status < 0)
+	{
+		printk("Unable to send interrupt\n");
+		return -1;
+	}
+	else
+	{
+		printk("Driver not enabled\n");
+		return -1;
+	}
+	return 0;
+}
 
 static irqreturn_t ODD_IRQ_HANDLER(int irq, void *dev_id, struct pt_regs *regs){
 	switch(*GPIO_PC_DIN){
@@ -118,8 +172,8 @@ static void setupGPIO()
 static int __init template_init(void)
 {
 
-	request_irq(17, EVEN_IRQ_HANDLER, NULL, "gpio_even_handler", NULL);
-	request_irq(18, ODD_IRQ_HANDLER, NULL, "gpio_odd_handler", NULL);
+	request_irq(17, IRQ_HANDLER, NULL, "button_click", NULL);
+	request_irq(18, IRQ_HANDLER, NULL, "button_click", NULL);
 	
 	alloc_chrdev_region(&my_dev ,0 , 1, "driver-gamepad");
 	cdev_init(&my_cdev, &my_fops);
@@ -135,6 +189,11 @@ static int __init template_init(void)
 
 	cdev_add(&my_cdev, my_dev, 1);
 	printk("Hello world, here is your module speaking\n");
+
+	//Setup signal sending, to trigger interrupts in the game.
+	memset(&signal_info, 0, sizeof(struct siginfo));
+	signal_info.si_signo = 50;
+	signal_info.si_code = SI_QUEUE;
 	return 0;
 }
 
@@ -165,7 +224,29 @@ static int read_driver(struct file *filp, char __user *buff, size_t count, loff_
 
 /* User program writes to the the driver */
 static int write_driver(struct file *filp, const char __user *buff, size_t count, loff_t *offp){
-	return 0;
+	char pid_array[5];
+	int pid = 0;
+	
+	//return if the pid is to big
+	if(count > 5)
+		return -1;
+	
+	//Copy userspace data to the buffer
+	copy_from_user(pid_array, buff, count);
+	sscanf(pid_array, "%d", &pid);
+	
+	//Locks the RCU while writing
+	rcu_read_lock();
+	
+	//Finds the task based on the PID
+	task = pid_task(find_pid_ns(pid, &init_pid_ns), PIDTYPE_PID);
+	if(task == NULL){
+		printk("Error: Could not find the task with pid: %d\n", pid);
+		rcu_read_unlock();
+		return -1;
+	}
+	rcu_read_unlock();
+	return count;
 }
 
 
