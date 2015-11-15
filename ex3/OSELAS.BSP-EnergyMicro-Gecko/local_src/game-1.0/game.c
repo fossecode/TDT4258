@@ -1,6 +1,9 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
+#include <sys/types.h> 
+#include <sys/stat.h> 
+#include <fcntl.h> 
 #include "linked-list.c"
 #define XCOORDS 40
 #define YCOORDS 30
@@ -16,7 +19,6 @@ void timerInterrupt();
 bool coordinateIsFood(struct coordinate coordinate);
 void changeSnakeDirection();
 void printGame();
-static void interrupt_handler(int, siginfo_t*, void*);
 
 //0 = east, 1 = south, 2 = west, 3 = north. Starting direction east.
 int direction = 0;
@@ -117,6 +119,7 @@ bool hitTheWall(struct coordinate coord)
 void gameOver()
 {
 	printf("GAME OVER\n");
+	exit(EXIT_SUCCESS);
 	//Must implement something that resets game here.
 }
 
@@ -161,38 +164,41 @@ void printGame(){
 	printf("__________________________________________________________________________________\n");
 }
 
-void interrupt_handler(int n, siginfo_t *info, void *unused)
-{
-	int direction = info->si_int;
-	
-	printf("helllooooe %d\n", direction);
-}
 
 int main(int argc, char *argv[])
 {
+
+	int fp = open("/dev/driver-gamepad", O_RDONLY);
 	//Use current time as seed for random generator
 	srand(time(NULL));
 	initSnake();
 	while (1){
-		char ch = 0;
-		printf("Type in a direction WASD and then click enter.\n");
-		scanf(" %c", &ch);
-		switch(ch){
-			case 'w': case 'W':
-				changeSnakeDirection(3);
-				break;
-			case 'a': case 'A':
-				changeSnakeDirection(2);
-				break;
-			case 's': case 'S':
-				changeSnakeDirection(1);
-				break;
-			case 'd': case 'D':
-				changeSnakeDirection(0);	
-				break;
+		sleep(1);
+		char buf[100];
+		char i = 0;
+		memset(buf, 0, 100);
+		while(read(fp, &buf[i++],100));
+		int tempDir;
+		if(strcmp(buf, "none") == 0){
+			tempDir = 5;
+		}else if(strcmp(buf, "right") == 0){
+			tempDir = 0;
+		}else if(strcmp(buf, "left") == 0){
+			tempDir = 2;
+		}else if(strcmp(buf, "up") == 0){
+			tempDir = 3;
+		}else if(strcmp(buf, "down") == 0){
+			tempDir = 1;
 		}
+		if(tempDir != 5)
+			changeSnakeDirection(tempDir);
+		
 		moveSnake();
 		printGame();
+
+		
+
+		
 	}
 
 	//printf("Hello World, I'm game!\n");

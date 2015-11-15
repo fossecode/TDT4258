@@ -33,7 +33,6 @@ struct class *cl;
 
 static char *direction;
 static irqreturn_t IRQ_HANDLER(int irq, void *dummy, struct pt_regs * regs);
-#define GPIO_IF        ((volatile uint32_t*)(GPIO_PA_BASE + 0x114))
 
 static char   message[256] = {0};           ///< Memory for the string that is passed from userspace
 static short  size_of_message;    
@@ -61,75 +60,26 @@ static struct file_operations my_fops = {
 
 static irqreturn_t IRQ_HANDLER(int irq, void *dev_id, struct pt_regs * regs)
 {
-	int direction;
-	switch(*GPIO_PC_DIN){
-      case 0b11111101:
-      	direction = 3;
-      	printk("up");
-        break;
-      case 0b11110111:
-      	direction = 1;
-      	printk("down");
-        break;
-	  case 0b11111110:
-      	direction = 2;
-      	printk("left");
-        break;
-      case 0b11111011:
-      	direction = 0;
-      	printk("right");
-        break;
-    }
-
-	//Set the signal value to the reversed button value(Because they are active low)
-	signal_info.si_int = direction;	
-	*GPIO_IFC = *GPIO_IF;
-	
-	//Checks if everything is up and running and sends the signal to the game.
-
-	int status = send_sig_info(50, &signal_info, task);
-	if (status < 0)
-	{
-		printk("Unable to send interrupt\n");
-		return -1;
-	}
-	else
-	{
-		printk("Driver not enabled\n");
-		return -1;
-	}
-	return 0;
-}
-
-static irqreturn_t ODD_IRQ_HANDLER(int irq, void *dev_id, struct pt_regs *regs){
 	switch(*GPIO_PC_DIN){
       case 0b11111101:
       	direction = "up";
-      	printk("up");
         break;
       case 0b11110111:
       	direction = "down";
-      	printk("down");
         break;
-    }
-	*GPIO_IFC = *GPIO_IF;
-	return 0;
-}
-
-static irqreturn_t EVEN_IRQ_HANDLER(int irq, void *dev_id, struct pt_regs *regs){
-	switch(*GPIO_PC_DIN){
-      case 0b11111110:
+           case 0b11111110:
       	direction = "left";
-      	printk("left");
         break;
       case 0b11111011:
       	direction = "right";
-      	printk("right");
         break;
     }
+
 	*GPIO_IFC = *GPIO_IF;
+
 	return 0;
 }
+
 
 /* function to set up GPIO mode and interrupts*/
 static void setupGPIO()
@@ -217,35 +167,13 @@ static int read_driver(struct file *filp, char __user *buff, size_t count, loff_
 	int error_count = 0;
    	// copy_to_user has the format ( * to, *from, size) and returns 0 on success
    	error_count = copy_to_user(buff, message, strlen("message"));
-	direction = "none";
- 
+ 	direction = "none";
  	return error_count;
 }
 
 /* User program writes to the the driver */
 static int write_driver(struct file *filp, const char __user *buff, size_t count, loff_t *offp){
-	char pid_array[5];
-	int pid = 0;
 	
-	//return if the pid is to big
-	if(count > 5)
-		return -1;
-	
-	//Copy userspace data to the buffer
-	copy_from_user(pid_array, buff, count);
-	sscanf(pid_array, "%d", &pid);
-	
-	//Locks the RCU while writing
-	rcu_read_lock();
-	
-	//Finds the task based on the PID
-	task = pid_task(find_pid_ns(pid, &init_pid_ns), PIDTYPE_PID);
-	if(task == NULL){
-		printk("Error: Could not find the task with pid: %d\n", pid);
-		rcu_read_unlock();
-		return -1;
-	}
-	rcu_read_unlock();
 	return count;
 }
 
