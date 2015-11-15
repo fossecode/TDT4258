@@ -4,9 +4,15 @@
 #include <sys/types.h> 
 #include <sys/stat.h> 
 #include <fcntl.h> 
+#include <linux/fb.h>
+#include <unistd.h>
+#include <fcntl.h>
+#include <linux/fb.h>
+#include <sys/mman.h>
+#include <sys/ioctl.h>
 #include "linked-list.c"
-#define XCOORDS 40
-#define YCOORDS 30
+#define XCOORDS 32
+#define YCOORDS 24
 
 //Prototype functions;
 void createNewFood();
@@ -18,12 +24,20 @@ void gameOver();
 void timerInterrupt();
 bool coordinateIsFood(struct coordinate coordinate);
 void changeSnakeDirection();
-void printGame();
+//void printGame();
 
 //0 = east, 1 = south, 2 = west, 3 = north. Starting direction east.
 int direction = 0;
 
 struct coordinate *food = NULL;
+
+int fbfd = 0;
+struct fb_var_screeninfo vinfo;
+struct fb_fix_screeninfo finfo;
+long int screensize = 0;
+char *fbp = 0;
+int x = 0, y = 0;
+long int location = 0;
 
 void createNewFood()
 {
@@ -39,6 +53,7 @@ void createNewFood()
 		createNewFood();
 	} else {
 		printf("\nFood generated on [x: %d, y: %d] \n",food->x, food->y);
+		drawRect(food->x, food->y);
 	}
 	return;
 }
@@ -73,6 +88,7 @@ void moveSnake()
 	else{
 	    //Add to beginning of snake
 	    add_to_list(newCoord->x, newCoord->y, false);
+	    drawRect(newCoord->x, newCoord->y);
 
 		//check if new coordinate contains food.
 		if (coordinateIsFood(*newCoord)){
@@ -80,7 +96,9 @@ void moveSnake()
 			createNewFood();
 		} else {
 			//If no food, just remove the last element of the snake.
-			delete_last();
+			struct coordinate *last = delete_last();
+			removeRect(last->x, last->y);
+
 		}
 	}
 }
@@ -113,7 +131,7 @@ bool deleteThisFunctionCoordIsFood(int x, int y){
 bool hitTheWall(struct coordinate coord)
 {
 	struct coordinate *ptr = &coord;
-	return (ptr->x > 40 || ptr->x <= 0 || ptr->y > 30 || ptr->y <= 0);
+	return (ptr->x >= XCOORDS || ptr->x < 0 || ptr->y >= YCOORDS || ptr->y < 0);
 }
 
 void gameOver()
@@ -132,12 +150,12 @@ void initSnake()
 {
 	//Create a snake with a length of 4 in the middle of the screen
 	int length = 4;
-	int y = 15; //Middle of screen
-	for(int x = 1; x<=length; x++)
+	int y = 12; //Middle of screen
+	for(int x = 0; x<length; x++)
         add_to_list(x, y, false);
     //Generate food
     createNewFood();
-    printGame();
+    //printGame();
 }
 
 void changeSnakeDirection(int dir)
@@ -145,35 +163,70 @@ void changeSnakeDirection(int dir)
 	direction = dir;
 }
 
-void printGame(){
-	printf("__________________________________________________________________________________\n");
-	for (int y = 30; y>0; y--){
-		printf("|");
-		for (int x = 1; x<=40; x++){
-			if (search_in_list(x,y)){
-				printf(" x");
-			}else if (deleteThisFunctionCoordIsFood(x,y)){
-				printf(" o");
-			}
-			else{
-				printf("  ");
-			}
-		}
-		printf("|\n");
-	}
-	printf("__________________________________________________________________________________\n");
+void drawRect(int x, int y){
+	memset(fbp, 0xFFFF, screensize);
+    struct fb_copyarea rect;
+	rect.dx= x*10;
+	rect.dy=y*10;
+	rect.width=10;
+	rect.height=10;
+
+	ioctl(fbfd,0x4680,&rect);
+}
+
+void removeRect(int x, int y){
+	memset(fbp, 0x0000, screensize);
+    struct fb_copyarea rect;
+	rect.dx= x*10;
+	rect.dy=y*10;
+	rect.width=10;
+	rect.height=10;
+
+	ioctl(fbfd,0x4680,&rect);
 }
 
 
 int main(int argc, char *argv[])
 {
 
+	/*int fbfd = open("/dev/fb0", O_RDWR);
+
+	*/
+
+
+	
+
+    // Open the file for reading and writing
+    fbfd = open("/dev/fb0", O_RDWR);
+    // Get fixed screen information
+    if (ioctl(fbfd, FBIOGET_FSCREENINFO, &finfo) == -1) {
+        perror("Error reading fixed information");
+        exit(2);
+    }
+
+    screensize = 240 * 320 * 16 / 8;
+
+    // Map the device to memory
+    fbp = (char *)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
+    
+    memset(fbp, 0x0000, screensize);
+
+    struct fb_copyarea rect;
+	rect.dx=0;
+	rect.dy=0;
+	rect.width=320;
+	rect.height=240;
+
+	ioctl(fbfd,0x4680,&rect);
+
+
+
 	int fp = open("/dev/driver-gamepad", O_RDONLY);
 	//Use current time as seed for random generator
 	srand(time(NULL));
 	initSnake();
 	while (1){
-		sleep(1);
+		usleep(150000);
 		char buf[100];
 		char i = 0;
 		memset(buf, 0, 100);
@@ -185,19 +238,16 @@ int main(int argc, char *argv[])
 			tempDir = 0;
 		}else if(strcmp(buf, "left") == 0){
 			tempDir = 2;
-		}else if(strcmp(buf, "up") == 0){
-			tempDir = 3;
 		}else if(strcmp(buf, "down") == 0){
+			tempDir = 3;
+		}else if(strcmp(buf, "up") == 0){
 			tempDir = 1;
 		}
 		if(tempDir != 5)
 			changeSnakeDirection(tempDir);
 		
 		moveSnake();
-		printGame();
-
-		
-
+		//printGame();
 		
 	}
 
