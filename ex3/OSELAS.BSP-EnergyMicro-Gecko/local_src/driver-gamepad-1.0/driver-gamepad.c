@@ -25,8 +25,6 @@
 #include <asm/uaccess.h>
 #include <asm/siginfo.h>
 
-struct siginfo signal_info;
-struct task_struct *task;
 struct cdev my_cdev;
 dev_t my_dev;
 struct class *cl;
@@ -47,13 +45,9 @@ static int release_driver(struct inode *inode, struct file *filp);
 /* User program reads from the driver */
 static int read_driver(struct file *filp, char __user *buff, size_t count, loff_t *offp);
 
-/* User program writes to the the driver */
-static int write_driver(struct file *filp, const char __user *buff, size_t count, loff_t *offp);
-
 static struct file_operations my_fops = {
 	.owner = THIS_MODULE,
 	.read = read_driver,
-	.write = write_driver,
 	.open = open_driver,
 	.release = release_driver
 };
@@ -174,13 +168,6 @@ static int read_driver(struct file *filp, char __user *buff, size_t count, loff_
  	return error_count;
 }
 
-/* User program writes to the the driver */
-static int write_driver(struct file *filp, const char __user *buff, size_t count, loff_t *offp){
-	
-	return count;
-}
-
-
 
 
 /*
@@ -193,7 +180,9 @@ static int write_driver(struct file *filp, const char __user *buff, size_t count
 static void __exit template_cleanup(void)
 {
 	unregister_chrdev_region(my_dev ,1);
-	//release_region(GPIO_PA_BASE, 0x120);
+	release_region(GPIO_PA_BASE, 0x120);
+	release_region(CMU_BASE2, 0x058);
+	release_region(ISER0, 0x4);
 	free_irq(17, NULL);
 	free_irq(18, NULL);
 	printk("Short life for a small module...\n");
