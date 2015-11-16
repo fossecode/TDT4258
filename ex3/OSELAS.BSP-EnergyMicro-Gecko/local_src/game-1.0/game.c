@@ -52,7 +52,6 @@ void createNewFood()
 		printf("\nHit snake on: [x: %d, y: %d], trying to generate food again.",food->x, food->y);
 		createNewFood();
 	} else {
-		printf("\nFood generated on [x: %d, y: %d] \n",food->x, food->y);
 		drawRect(food->x, food->y, true);
 	}
 	return;
@@ -83,22 +82,21 @@ void moveSnake()
     }
 
     
-    if(! moveIsOK(*newCoord))
+    if(! moveIsOK(*newCoord)){
     	gameOver();
-	else{
+	} else{
 	    //Add to beginning of snake
 	    add_to_list(newCoord->x, newCoord->y, false);
 	    drawRect(newCoord->x, newCoord->y, false);
 
 		//check if new coordinate contains food.
 		if (coordinateIsFood(*newCoord)){
-			printf("Found food on: [%d, %d] ;) YUM YUM\n", newCoord->x, newCoord->y);
 			createNewFood();
 		} else {
 			//If no food, just remove the last element of the snake.
 			struct coordinate *last = delete_last();
 			removeRect(last->x, last->y);
-
+			free(last);
 		}
 	}
 }
@@ -137,8 +135,11 @@ bool hitTheWall(struct coordinate coord)
 void gameOver()
 {
 	printf("GAME OVER\n");
-	exit(EXIT_SUCCESS);
-	//Must implement something that resets game here.
+	sleep(2);
+	clear_list();
+   	clearScreen();
+   	changeSnakeDirection(0);
+   	initSnake();
 }
 
 void timerInterrupt()
@@ -167,7 +168,7 @@ void drawRect(int x, int y, bool food){
 	if (food)
 		memset(fbp, 0x03F0, screensize);
 	else	
-		memset(fbp, 0xFFFF, screensize);
+		memset(fbp, 0x0F80, screensize);
     struct fb_copyarea rect;
 	rect.dx= (x*10) + 1;
 	rect.dy= (y*10) + 1;
@@ -188,6 +189,17 @@ void removeRect(int x, int y){
 	ioctl(fbfd,0x4680,&rect);
 }
 
+void clearScreen(){
+	memset(fbp, 0x0000, screensize);
+
+    struct fb_copyarea rect;
+	rect.dx=0;
+	rect.dy=0;
+	rect.width=320;
+	rect.height=240;
+
+	ioctl(fbfd,0x4680,&rect);	
+}
 
 int main(int argc, char *argv[])
 {
@@ -212,24 +224,14 @@ int main(int argc, char *argv[])
     // Map the device to memory
     fbp = (char *)mmap(0, screensize, PROT_READ | PROT_WRITE, MAP_SHARED, fbfd, 0);
     
-    memset(fbp, 0x0000, screensize);
-
-    struct fb_copyarea rect;
-	rect.dx=0;
-	rect.dy=0;
-	rect.width=320;
-	rect.height=240;
-
-	ioctl(fbfd,0x4680,&rect);
-
-
+   	clearScreen();
 
 	int fp = open("/dev/driver-gamepad", O_RDONLY);
 	//Use current time as seed for random generator
 	srand(time(NULL));
 	initSnake();
 	while (1){
-		usleep(100000);
+		usleep(75000);
 		char buf[100];
 		char i = 0;
 		memset(buf, 0, 100);

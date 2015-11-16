@@ -79,7 +79,7 @@ bool search_in_list(int x, int y)
     return false;
 }
 
-int delete_last()
+struct coordinate* delete_last()
 {
     struct coordinate *last = NULL;
     struct coordinate *ptr = head;
@@ -89,14 +89,14 @@ int delete_last()
         if(ptr->next->next == NULL)
         {
             last = ptr->next;
-            free(last);
+            //free(last);
             ptr->next = NULL;
             break;
         } else {
             ptr = ptr->next;
         }
     }
-    return 0;
+    return last;
 }
 
 struct coordinate* get_head_of_snake()
@@ -104,6 +104,12 @@ struct coordinate* get_head_of_snake()
     return head;
 }
 
+void clear_list()
+{
+    head = NULL;
+    curr = NULL;
+
+}
 
 void print_list(void)
 {
