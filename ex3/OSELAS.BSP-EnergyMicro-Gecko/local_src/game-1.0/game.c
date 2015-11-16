@@ -217,6 +217,11 @@ int main(int argc, char *argv[])
    	clearScreen();
 
 	int fp = open("/dev/driver-gamepad", O_RDONLY);
+
+	if(fp == -1){
+		exit(EXIT_SUCCESS);
+	}
+
 	//Use current time as seed for random generator
 	srand(time(NULL));
 	initSnake();
@@ -240,7 +245,7 @@ int main(int argc, char *argv[])
 		}else if(strcmp(buf, "exit") == 0){
 			break;
 		}
-		
+
 		if(tempDir != 5)
 			changeSnakeDirection(tempDir);
 		
