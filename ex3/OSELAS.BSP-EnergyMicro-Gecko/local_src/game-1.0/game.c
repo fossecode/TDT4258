@@ -24,7 +24,6 @@ void gameOver();
 void timerInterrupt();
 bool coordinateIsFood(struct coordinate coordinate);
 void changeSnakeDirection();
-//void printGame();
 
 //0 = east, 1 = south, 2 = west, 3 = north. Starting direction east.
 int direction = 0;
@@ -49,7 +48,6 @@ void createNewFood()
 	food->y = rand() % YCOORDS;
 
 	if (isCoordinateOnSnake(*food)){
-		printf("\nHit snake on: [x: %d, y: %d], trying to generate food again.",food->x, food->y);
 		createNewFood();
 	} else {
 		drawRect(food->x, food->y, true);
@@ -156,7 +154,6 @@ void initSnake()
         add_to_list(x, y, false);
     //Generate food
     createNewFood();
-    //printGame();
 }
 
 void changeSnakeDirection(int dir)
@@ -204,13 +201,6 @@ void clearScreen(){
 int main(int argc, char *argv[])
 {
 
-	/*int fbfd = open("/dev/fb0", O_RDWR);
-
-	*/
-
-
-	
-
     // Open the file for reading and writing
     fbfd = open("/dev/fb0", O_RDWR);
     // Get fixed screen information
@@ -247,17 +237,16 @@ int main(int argc, char *argv[])
 			tempDir = 3;
 		}else if(strcmp(buf, "up") == 0){
 			tempDir = 1;
+		}else if(strcmp(buf, "exit") == 0){
+			break;
 		}
+		
 		if(tempDir != 5)
 			changeSnakeDirection(tempDir);
 		
 		moveSnake();
-		//printGame();
 		
 	}
-
-	//printf("Hello World, I'm game!\n");
-
 
 
 	exit(EXIT_SUCCESS);

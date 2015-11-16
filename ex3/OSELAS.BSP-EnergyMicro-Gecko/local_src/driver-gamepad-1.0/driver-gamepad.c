@@ -73,6 +73,9 @@ static irqreturn_t IRQ_HANDLER(int irq, void *dev_id, struct pt_regs * regs)
       case 0b11111011:
       	direction = "right";
         break;
+      case 0b01111111:
+      	direction = "exit";
+        break;
     }
 
 	*GPIO_IFC = *GPIO_IF;
